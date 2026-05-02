@@ -1,6 +1,6 @@
 {
   "name": "@theqrl/qrl-wallet-provider",
-  "version": "0.0.0-development",
+  "version": "1.0.0",
   "description": "EIP-1193 / EIP-6963 JavaScript provider for the QRL ecosystem wallet, derived from MetaMask providers",
   "files": [
     "dist",

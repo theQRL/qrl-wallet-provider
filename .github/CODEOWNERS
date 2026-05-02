@@ -1,0 +1,9 @@
+# Default owners — must approve any change to the repo.
+# Update this list once the QRL team's GitHub handles are confirmed.
+*       @theQRL/core
+
+# Critical paths require additional review.
+/.github/workflows/        @theQRL/core
+/SECURITY.md               @theQRL/core
+/package.json              @theQRL/core
+/package-lock.json         @theQRL/core

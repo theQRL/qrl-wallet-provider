@@ -1,1 +1,1 @@
-export const ZOND_WALLET_PROVIDER_NAME = "zond-wallet-provider";
+export const QRL_WALLET_PROVIDER_NAME = "qrl-wallet-provider";

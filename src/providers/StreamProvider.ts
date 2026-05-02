@@ -73,12 +73,12 @@ export abstract class AbstractStreamProvider extends BaseProvider {
       connectionStream,
       mux as unknown as Duplex,
       connectionStream,
-      this._handleStreamDisconnect.bind(this, "ZondWallet")
+      this._handleStreamDisconnect.bind(this, "QrlWallet")
     );
 
     // Set up RPC connection
     this._jsonRpcConnection = createStreamMiddleware({
-      retryOnMessage: "ZOND_WALLET_EXTENSION_CONNECT_CAN_RETRY",
+      retryOnMessage: "QRL_WALLET_EXTENSION_CONNECT_CAN_RETRY",
     }) as unknown as JsonRpcConnection;
 
     // @ts-ignore
@@ -86,7 +86,7 @@ export abstract class AbstractStreamProvider extends BaseProvider {
       this._jsonRpcConnection.stream,
       mux.createStream(jsonRpcStreamName) as unknown as Duplex,
       this._jsonRpcConnection.stream,
-      this._handleStreamDisconnect.bind(this, "ZondWallet RpcProvider")
+      this._handleStreamDisconnect.bind(this, "QrlWallet RpcProvider")
     );
 
     // Wire up the JsonRpcEngine to the JSON-RPC connection stream
@@ -121,7 +121,7 @@ export abstract class AbstractStreamProvider extends BaseProvider {
   /**
    * MUST be called by child classes.
    *
-   * Calls `zondWallet_getProviderState` and passes the result to
+   * Calls `qrlWallet_getProviderState` and passes the result to
    * {@link BaseProvider._initializeState}. Logs an error if getting initial state
    * fails. Throws if called after initialization has completed.
    */
@@ -130,11 +130,11 @@ export abstract class AbstractStreamProvider extends BaseProvider {
 
     try {
       initialState = (await this.request({
-        method: "zondWallet_getProviderState",
+        method: "qrlWallet_getProviderState",
       })) as Parameters<BaseProvider["_initializeState"]>[0];
     } catch (error) {
       this._log.error(
-        "ZondWallet: Failed to get initial state. Please report this bug.",
+        "QrlWallet: Failed to get initial state. Please report this bug.",
         error
       );
     }
@@ -152,7 +152,7 @@ export abstract class AbstractStreamProvider extends BaseProvider {
    */
   // eslint-disable-next-line no-restricted-syntax
   private _handleStreamDisconnect(streamName: string, error: Error | null) {
-    let warningMsg = `ZondWallet: Lost connection to "${streamName}".`;
+    let warningMsg = `QrlWallet: Lost connection to "${streamName}".`;
     if (error?.stack) {
       warningMsg += `\n${error.stack}`;
     }
@@ -212,7 +212,7 @@ export class StreamProvider extends AbstractStreamProvider {
   /**
    * MUST be called after instantiation to complete initialization.
    *
-   * Calls `zondWallet_getProviderState` and passes the result to
+   * Calls `qrlWallet_getProviderState` and passes the result to
    * {@link BaseProvider._initializeState}. Logs an error if getting initial state
    * fails. Throws if called after initialization has completed.
    */

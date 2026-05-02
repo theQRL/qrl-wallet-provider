@@ -1,0 +1,32 @@
+name: Code Coverage
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.x'
+      - run: npm ci
+      # jest.config.js sets `collectCoverage: true`, so `npm test` writes coverage/lcov.info.
+      - run: npm test
+      - name: Upload coverage to Codecov
+        if: github.repository == 'theQRL/qrl-wallet-provider' && github.event_name == 'push'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: provider
+          fail_ci_if_error: true

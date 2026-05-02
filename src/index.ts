@@ -7,7 +7,7 @@ export * from "./rpc-errors";
 export * from "./safe-event-emitter";
 export * from "./superstruct";
 
-// Only the types used by the Zond Wallet project is exported here. Exporting all throws dupplicate name error.
+// Only the types used by the QRL Wallet project are exported here. Exporting all throws duplicate name error.
 export type {
   Json,
   JsonRpcRequest,

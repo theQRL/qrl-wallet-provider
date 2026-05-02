@@ -57,7 +57,7 @@ function createErrorMiddleware(
       if (!error) {
         return done();
       }
-      log.warn(`ZondWallet - RPC Error: ${error.message}`, error);
+      log.warn(`QrlWallet - RPC Error: ${error.message}`, error);
       return done();
     });
   };

@@ -61,7 +61,7 @@ describe("StreamProvider", () => {
 
       expect(requestMock).toHaveBeenCalledTimes(1);
       expect(requestMock).toHaveBeenCalledWith({
-        method: "zondWallet_getProviderState",
+        method: "qrlWallet_getProviderState",
       });
     });
   });

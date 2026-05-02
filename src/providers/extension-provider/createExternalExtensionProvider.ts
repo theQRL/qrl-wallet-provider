@@ -6,11 +6,11 @@ import type { Runtime } from "webextension-polyfill";
 import { StreamProvider } from "../StreamProvider";
 import { getDefaultExternalMiddleware } from "../utils";
 import config from "./external-extension-config.json";
-import { ZOND_WALLET_PROVIDER_NAME } from "@/constants/providerConstants";
+import { QRL_WALLET_PROVIDER_NAME } from "@/constants/providerConstants";
 
 const browser = detect();
 
-const ZondWalletInpageProviderStreamName = ZOND_WALLET_PROVIDER_NAME;
+const QrlWalletInpageProviderStreamName = QRL_WALLET_PROVIDER_NAME;
 
 export type ExtensionType = "stable" | "flask" | "beta" | string;
 
@@ -31,7 +31,7 @@ export function createExternalExtensionProvider(
 
     const pluginStream = new PortStream(metamaskPort);
     provider = new StreamProvider(pluginStream as unknown as Duplex, {
-      jsonRpcStreamName: ZondWalletInpageProviderStreamName,
+      jsonRpcStreamName: QrlWalletInpageProviderStreamName,
       logger: console,
       rpcMiddleware: getDefaultExternalMiddleware(console),
     });
@@ -42,7 +42,7 @@ export function createExternalExtensionProvider(
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     provider.initialize();
   } catch (error) {
-    console.dir(`ZondWallet connect error.`, error);
+    console.dir(`QrlWallet connect error.`, error);
     throw error;
   }
   return provider;

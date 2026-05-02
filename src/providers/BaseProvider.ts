@@ -90,7 +90,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
 
   /**
    * The user's currently selected Ethereum address.
-   * If null, ZondWallet is either locked or the user has not permitted any
+   * If null, QrlWallet is either locked or the user has not permitted any
    * addresses to be viewed.
    */
   #selectedAddress: string | null;
@@ -236,7 +236,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * @param initialState - The provider's initial state.
    * @param initialState.accounts - The user's accounts.
    * @param initialState.chainId - The chain ID.
-   * @param initialState.isUnlocked - Whether the user has unlocked ZondWallet.
+   * @param initialState.isUnlocked - Whether the user has unlocked QrlWallet.
    * @param initialState.networkVersion - The network version.
    * @fires BaseProvider#_initialized - If `initialState` is defined.
    * @fires BaseProvider#connect - If `initialState` is defined.
@@ -312,7 +312,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * required events. Idempotent.
    *
    * @param chainId - The ID of the newly connected chain.
-   * @fires ZondWalletInpageProvider#connect
+   * @fires QrlWalletInpageProvider#connect
    */
   protected _handleConnect(chainId: string) {
     if (!this._state.isConnected) {
@@ -413,7 +413,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
 
     if (!Array.isArray(accounts)) {
       this._log.error(
-        "ZondWallet: Received invalid accounts parameter. Please report this bug.",
+        "QrlWallet: Received invalid accounts parameter. Please report this bug.",
         accounts,
       );
       _accounts = [];
@@ -422,7 +422,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
     for (const account of accounts) {
       if (typeof account !== "string") {
         this._log.error(
-          "ZondWallet: Received non-string account. Please report this bug.",
+          "QrlWallet: Received non-string account. Please report this bug.",
           accounts,
         );
         _accounts = [];
@@ -436,7 +436,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
       // returns
       if (isEthAccounts && this._state.accounts !== null) {
         this._log.error(
-          `ZondWallet: 'eth_accounts' unexpectedly updated accounts. Please report this bug.`,
+          `QrlWallet: 'eth_accounts' unexpectedly updated accounts. Please report this bug.`,
           _accounts,
         );
       }
@@ -474,7 +474,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
   }: { accounts?: string[]; isUnlocked?: boolean } = {}) {
     if (typeof isUnlocked !== "boolean") {
       this._log.error(
-        "ZondWallet: Received invalid isUnlocked parameter. Please report this bug.",
+        "QrlWallet: Received invalid isUnlocked parameter. Please report this bug.",
       );
       return;
     }

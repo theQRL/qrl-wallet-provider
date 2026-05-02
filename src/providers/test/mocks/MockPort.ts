@@ -8,7 +8,7 @@ import type {
 
 /**
  * A mock WebExtension Port for multiplexed JSON-RPC messages, used to
- * represent the connection between an extension and the ZondWallet browser
+ * represent the connection between an extension and the QrlWallet browser
  * extension.
  *
  * @see {@link https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/Port})

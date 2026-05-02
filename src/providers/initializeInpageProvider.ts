@@ -1,8 +1,8 @@
 import type { Duplex } from "readable-stream";
 import type { EIP6963ProviderInfo } from "./EIP6963";
 import { announceProvider } from "./EIP6963";
-import type { ZondWalletInpageProviderOptions } from "./ZondWalletInpageProvider";
-import { ZondWalletInpageProvider } from "./ZondWalletInpageProvider";
+import type { QrlWalletInpageProviderOptions } from "./QrlWalletInpageProvider";
+import { QrlWalletInpageProvider } from "./QrlWalletInpageProvider";
 
 type InitializeProviderOptions = {
   /**
@@ -13,10 +13,10 @@ type InitializeProviderOptions = {
    * The EIP-6963 provider info that should be announced if set.
    */
   providerInfo: EIP6963ProviderInfo;
-} & ZondWalletInpageProviderOptions;
+} & QrlWalletInpageProviderOptions;
 
 /**
- * Initializes a ZondWalletInpageProvider.
+ * Initializes a QrlWalletInpageProvider.
  *
  * @param options - An options bag.
  * @param options.connectionStream - A Node.js stream.
@@ -33,8 +33,8 @@ export function initializeProvider({
   logger = console,
   maxEventListeners = 100,
   providerInfo,
-}: InitializeProviderOptions): ZondWalletInpageProvider {
-  const provider = new ZondWalletInpageProvider(connectionStream, {
+}: InitializeProviderOptions): QrlWalletInpageProvider {
+  const provider = new QrlWalletInpageProvider(connectionStream, {
     jsonRpcStreamName,
     logger,
     maxEventListeners,
@@ -50,7 +50,7 @@ export function initializeProvider({
     },
   });
 
-  // Announces provider based on EIP-6963, so that dApps can detect the zond wallet
+  // Announces provider based on EIP-6963, so that dApps can detect the QRL wallet
   announceProvider({
     info: providerInfo,
     provider: proxiedProvider,

@@ -30,7 +30,7 @@ type InitializedExtensionProviderDetails = {
  *
  * @param options - Options bag.
  * @param options.initialState - The initial provider state returned on
- * initialization.  See {@link ZondWalletInpageProvider._initializeState}.
+ * initialization.  See {@link QrlWalletInpageProvider._initializeState}.
  * @param options.onMethodCalled - A set of configuration objects for adding
  * method-specific callbacks.
  * @returns A tuple of the initialized provider, the mock port used, and an
@@ -55,14 +55,14 @@ async function getInitializedProvider({
   const onWrite = jest.fn();
   const port = new MockPort((name, data) => {
     if (
-      name === "zond-wallet-provider" &&
-      data.method === "zondWallet_getProviderState"
+      name === "qrl-wallet-provider" &&
+      data.method === "qrlWallet_getProviderState"
     ) {
       // Wrap in `setTimeout` to ensure a reply is received by the provider
       // after the provider has processed the request, to ensure that the
       // provider recognizes the id.
       setTimeout(() =>
-        port.reply("zond-wallet-provider", {
+        port.reply("qrl-wallet-provider", {
           id: onWrite.mock.calls[0][1].id,
           jsonrpc: "2.0",
           result: {
@@ -186,10 +186,10 @@ describe("createExternalExtensionProvider", () => {
           const { provider, port } = await getInitializedProvider({
             onMethodCalled: [
               {
-                substream: "zond-wallet-provider",
+                substream: "qrl-wallet-provider",
                 method,
                 callback: ({ id }) => {
-                  port.reply("zond-wallet-provider", {
+                  port.reply("qrl-wallet-provider", {
                     id,
                     jsonrpc: "2.0",
                     result: null,
@@ -209,10 +209,10 @@ describe("createExternalExtensionProvider", () => {
           const { provider, port } = await getInitializedProvider({
             onMethodCalled: [
               {
-                substream: "zond-wallet-provider",
+                substream: "qrl-wallet-provider",
                 method,
                 callback: ({ id }) => {
-                  port.reply("zond-wallet-provider", {
+                  port.reply("qrl-wallet-provider", {
                     id,
                     jsonrpc: "2.0",
                     result: null,
@@ -234,10 +234,10 @@ describe("createExternalExtensionProvider", () => {
           const { provider, port } = await getInitializedProvider({
             onMethodCalled: [
               {
-                substream: "zond-wallet-provider",
+                substream: "qrl-wallet-provider",
                 method,
                 callback: ({ id }) => {
-                  port.reply("zond-wallet-provider", {
+                  port.reply("qrl-wallet-provider", {
                     id,
                     jsonrpc: "2.0",
                     result: "success!",
@@ -256,10 +256,10 @@ describe("createExternalExtensionProvider", () => {
           const { provider, port } = await getInitializedProvider({
             onMethodCalled: [
               {
-                substream: "zond-wallet-provider",
+                substream: "qrl-wallet-provider",
                 method,
                 callback: ({ id }) => {
-                  port.reply("zond-wallet-provider", {
+                  port.reply("qrl-wallet-provider", {
                     id,
                     jsonrpc: "2.0",
                     error: { code: 0, message: "failure!" },

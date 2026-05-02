@@ -26,5 +26,10 @@
     }
   },
   "include": ["src", "src/index.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.ts",
+    "src/**/test/**",
+    "src/**/__mocks__/**"
+  ]
 }

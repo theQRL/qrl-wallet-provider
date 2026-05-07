@@ -92,21 +92,26 @@ export abstract class AbstractStreamProvider extends BaseProvider {
     // Wire up the JsonRpcEngine to the JSON-RPC connection stream
     this._rpcEngine.push(this._jsonRpcConnection.middleware);
 
-    // Handle JSON-RPC notifications
+    // Handle JSON-RPC notifications. Notification names are the QRL
+    // wallet's own (`qrlWallet_*` / `QRL_WALLET_STREAM_FAILURE`).
+    // Legacy `metamask_*` aliases inherited from the upstream fork
+    // were retired prior to first stable release; the only consumer
+    // (`qrl-web3-wallet`) never emitted them, so dropping them
+    // narrows the public surface without breaking compatibility.
     this._jsonRpcConnection.events.on("notification", (payload) => {
       const { method, params } = payload;
-      if (method === "metamask_accountsChanged") {
+      if (method === "qrlWallet_accountsChanged") {
         this._handleAccountsChanged(params);
-      } else if (method === "metamask_unlockStateChanged") {
+      } else if (method === "qrlWallet_unlockStateChanged") {
         this._handleUnlockStateChanged(params);
-      } else if (method === "metamask_chainChanged") {
+      } else if (method === "qrlWallet_chainChanged") {
         this._handleChainChanged(params);
       } else if (EMITTED_NOTIFICATIONS.includes(method)) {
         this.emit("message", {
           type: method,
           data: params,
         });
-      } else if (method === "METAMASK_STREAM_FAILURE") {
+      } else if (method === "QRL_WALLET_STREAM_FAILURE") {
         connectionStream.destroy(
           new Error(messages.errors.permanentlyDisconnected())
         );

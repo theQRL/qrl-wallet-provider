@@ -119,9 +119,9 @@ export class QrlWalletInpageProvider extends AbstractStreamProvider {
     // networkVersion is 'loading'.
     super._handleChainChanged({ chainId, networkVersion });
 
-    if (this._state.isConnected && networkVersion !== this.#networkVersion) {
+    if (this._isConnected && networkVersion !== this.#networkVersion) {
       this.#networkVersion = networkVersion as string;
-      if (this._state.initialized) {
+      if (this._isInitialized) {
         this.emit("networkChanged", this.#networkVersion);
       }
     }

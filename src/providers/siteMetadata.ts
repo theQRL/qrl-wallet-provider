@@ -21,7 +21,7 @@ export async function sendSiteMetadata(
       {
         jsonrpc: "2.0",
         id: 1,
-        method: "metamask_sendDomainMetadata",
+        method: "qrlWallet_sendDomainMetadata",
         params: domainMetadata,
       },
       NOOP,

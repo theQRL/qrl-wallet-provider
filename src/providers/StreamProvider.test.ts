@@ -396,7 +396,7 @@ describe("StreamProvider", () => {
 
           mockStream.notify(mockStreamName, {
             jsonrpc: "2.0",
-            method: "metamask_chainChanged",
+            method: "qrlWallet_chainChanged",
             params: { chainId: "0x1", networkVersion: "0x1" },
           });
         });
@@ -436,7 +436,7 @@ describe("StreamProvider", () => {
 
           mockStream.notify(mockStreamName, {
             jsonrpc: "2.0",
-            method: "metamask_chainChanged",
+            method: "qrlWallet_chainChanged",
             // A "loading" networkVersion indicates the network is changing.
             // Although the chainId is different, chainChanged should not be
             // emitted in this case.
@@ -460,7 +460,7 @@ describe("StreamProvider", () => {
 
           mockStream.notify(mockStreamName, {
             jsonrpc: "2.0",
-            method: "metamask_chainChanged",
+            method: "qrlWallet_chainChanged",
             // The networkVersion will be ignored here, we're just setting it
             // to something other than 'loading'.
             params: { chainId: "0x1", networkVersion: "1" },

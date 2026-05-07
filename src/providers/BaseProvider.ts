@@ -70,9 +70,23 @@ export type BaseProviderState = {
 export abstract class BaseProvider extends SafeEventEmitter {
   protected readonly _log: ConsoleLike;
 
-  protected _state: BaseProviderState;
+  // Truly private (ES2022 `#`-private). Page scripts holding a reference
+  // to the provider can no longer read or mutate provider state via
+  // `provider._state`. Subclasses access the two state flags they need
+  // through the protected getters below.
+  #state: BaseProviderState;
 
   protected _rpcEngine: JsonRpcEngine;
+
+  /** Read-only view of `#state.isConnected` for subclasses. */
+  protected get _isConnected(): boolean {
+    return this.#state.isConnected;
+  }
+
+  /** Read-only view of `#state.initialized` for subclasses. */
+  protected get _isInitialized(): boolean {
+    return this.#state.initialized;
+  }
 
   protected static _defaultState: BaseProviderState = {
     accounts: null,
@@ -116,7 +130,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
     this.setMaxListeners(maxEventListeners);
 
     // Private state
-    this._state = {
+    this.#state = {
       ...BaseProvider._defaultState,
     };
 
@@ -164,7 +178,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * @returns Whether the provider can process RPC requests.
    */
   isConnected(): boolean {
-    return this._state.isConnected;
+    return this.#state.isConnected;
   }
 
   /**
@@ -247,7 +261,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
     isUnlocked: boolean;
     networkVersion?: string;
   }) {
-    if (this._state.initialized) {
+    if (this.#state.initialized) {
       throw new Error("Provider already initialized.");
     }
 
@@ -263,7 +277,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
 
     // Mark provider as initialized regardless of whether initial state was
     // retrieved.
-    this._state.initialized = true;
+    this.#state.initialized = true;
     this.emit("_initialized");
   }
 
@@ -315,8 +329,8 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * @fires QrlWalletInpageProvider#connect
    */
   protected _handleConnect(chainId: string) {
-    if (!this._state.isConnected) {
-      this._state.isConnected = true;
+    if (!this.#state.isConnected) {
+      this.#state.isConnected = true;
       this.emit("connect", { chainId });
       this._log.debug(messages.info.connected(chainId));
     }
@@ -335,10 +349,10 @@ export abstract class BaseProvider extends SafeEventEmitter {
    */
   protected _handleDisconnect(isRecoverable: boolean, errorMessage?: string) {
     if (
-      this._state.isConnected ||
-      (!this._state.isPermanentlyDisconnected && !isRecoverable)
+      this.#state.isConnected ||
+      (!this.#state.isPermanentlyDisconnected && !isRecoverable)
     ) {
-      this._state.isConnected = false;
+      this.#state.isConnected = false;
 
       let error;
       if (isRecoverable) {
@@ -354,10 +368,10 @@ export abstract class BaseProvider extends SafeEventEmitter {
         );
         this._log.error(error);
         this.#chainId = null;
-        this._state.accounts = null;
+        this.#state.accounts = null;
         this.#selectedAddress = null;
-        this._state.isUnlocked = false;
-        this._state.isPermanentlyDisconnected = true;
+        this.#state.isUnlocked = false;
+        this.#state.isPermanentlyDisconnected = true;
       }
 
       this.emit("disconnect", error);
@@ -390,7 +404,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
 
     if (chainId !== this.#chainId) {
       this.#chainId = chainId;
-      if (this._state.initialized) {
+      if (this.#state.initialized) {
         this.emit("chainChanged", this.#chainId);
       }
     }
@@ -431,17 +445,17 @@ export abstract class BaseProvider extends SafeEventEmitter {
     }
 
     // emit accountsChanged if anything about the accounts array has changed
-    if (!dequal(this._state.accounts, _accounts)) {
+    if (!dequal(this.#state.accounts, _accounts)) {
       // we should always have the correct accounts even before eth_accounts
       // returns
-      if (isEthAccounts && this._state.accounts !== null) {
+      if (isEthAccounts && this.#state.accounts !== null) {
         this._log.error(
           `QrlWallet: 'eth_accounts' unexpectedly updated accounts. Please report this bug.`,
           _accounts,
         );
       }
 
-      this._state.accounts = _accounts as string[];
+      this.#state.accounts = _accounts as string[];
 
       // handle selectedAddress
       if (this.#selectedAddress !== _accounts[0]) {
@@ -449,7 +463,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
       }
 
       // finally, after all state has been updated, emit the event
-      if (this._state.initialized) {
+      if (this.#state.initialized) {
         const _nextAccounts = [..._accounts];
         this.emit("accountsChanged", _nextAccounts);
       }
@@ -479,8 +493,8 @@ export abstract class BaseProvider extends SafeEventEmitter {
       return;
     }
 
-    if (isUnlocked !== this._state.isUnlocked) {
-      this._state.isUnlocked = isUnlocked;
+    if (isUnlocked !== this.#state.isUnlocked) {
+      this.#state.isUnlocked = isUnlocked;
       this._handleAccountsChanged(accounts ?? []);
     }
   }

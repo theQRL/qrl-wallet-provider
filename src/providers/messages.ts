@@ -40,7 +40,7 @@ const messages = {
       walletWatchAssetNFTExperimental: `QrlWallet: The RPC method 'wallet_watchAsset' is experimental for ERC721/ERC1155 assets and may change in the future.`,
     },
     // misc
-    experimentalMethods: `QrlWallet: 'ethereum._metamask' exposes non-standard, experimental methods. They may be removed or changed without warning.`,
+    experimentalMethods: `QrlWallet: 'ethereum._qrlWallet' exposes non-standard, experimental methods. They may be removed or changed without warning.`,
   },
 };
 export default messages;

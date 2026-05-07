@@ -416,7 +416,7 @@ describe("QrlWalletInpageProvider: RPC", () => {
 
         connectionStream.notify(QrlWalletInpageProviderStreamName, {
           jsonrpc: "2.0",
-          method: "metamask_chainChanged",
+          method: "qrlWallet_chainChanged",
           params: { chainId: "0x1", networkVersion: "1" },
         });
       });
@@ -433,7 +433,7 @@ describe("QrlWalletInpageProvider: RPC", () => {
 
         connectionStream.notify(QrlWalletInpageProviderStreamName, {
           jsonrpc: "2.0",
-          method: "metamask_chainChanged",
+          method: "qrlWallet_chainChanged",
           params: { chainId: "0x1", networkVersion: "1" },
         });
       });
@@ -457,7 +457,7 @@ describe("QrlWalletInpageProvider: RPC", () => {
 
         connectionStream.notify(QrlWalletInpageProviderStreamName, {
           jsonrpc: "2.0",
-          method: "metamask_chainChanged",
+          method: "qrlWallet_chainChanged",
           // A "loading" networkVersion indicates the network is changing.
           // Although the chainId is different, chainChanged should not be
           // emitted in this case.
@@ -482,7 +482,7 @@ describe("QrlWalletInpageProvider: RPC", () => {
 
         connectionStream.notify(QrlWalletInpageProviderStreamName, {
           jsonrpc: "2.0",
-          method: "metamask_chainChanged",
+          method: "qrlWallet_chainChanged",
           params: { chainId: "0x1", networkVersion: "1" },
         });
       });
@@ -722,11 +722,13 @@ describe("QrlWalletInpageProvider: Miscellanea", () => {
 
       expect(provider.isConnected()).toBe(false);
 
-      provider._state.isConnected = true;
+      // Drive state changes through the protected lifecycle handlers
+      // rather than poking at the now-truly-private #state directly.
+      provider._handleConnect("0x1");
 
       expect(provider.isConnected()).toBe(true);
 
-      provider._state.isConnected = false;
+      provider._handleDisconnect(true);
 
       expect(provider.isConnected()).toBe(false);
     });

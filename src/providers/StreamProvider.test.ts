@@ -36,7 +36,6 @@ describe("StreamProvider", () => {
       const accounts = ["0xabc"];
       const chainId = "0x1";
       const networkVersion = "1";
-      const isUnlocked = true;
 
       const streamProvider = new StreamProvider(new MockConnectionStream(), {
         jsonRpcStreamName: mockStreamName,
@@ -48,7 +47,6 @@ describe("StreamProvider", () => {
           return {
             accounts,
             chainId,
-            isUnlocked,
             networkVersion,
           };
         });
@@ -316,22 +314,22 @@ describe("StreamProvider", () => {
         });
       });
 
-      it("calls _handleAccountsChanged on request for eth_accounts", async () => {
+      it("calls _handleAccountsChanged on request for qrl_accounts", async () => {
         setNextRpcEngineResponse(null, { result: ["0x1"] });
         await new Promise((done) => {
           (streamProvider as any)._rpcRequest(
-            { method: "eth_accounts" },
+            { method: "qrl_accounts" },
             (error: Error | null, response: any) => {
               expect(
                 (streamProvider as any)._rpcEngine.handle,
               ).toHaveBeenCalledWith(
-                expect.objectContaining({ method: "eth_accounts" }),
+                expect.objectContaining({ method: "qrl_accounts" }),
                 expect.any(Function),
               );
 
               expect(
                 (streamProvider as any)._handleAccountsChanged,
-              ).toHaveBeenCalledWith(["0x1"], true);
+              ).toHaveBeenCalledWith(["0x1"]);
 
               expect(error).toBeNull();
               expect(response).toStrictEqual({ result: ["0x1"] });
@@ -341,22 +339,22 @@ describe("StreamProvider", () => {
         });
       });
 
-      it("calls _handleAccountsChanged with empty array on eth_accounts request returning error", async () => {
+      it("leaves account state alone when qrl_accounts fails", async () => {
         setNextRpcEngineResponse(new Error("foo"), { error: "foo" });
         await new Promise((done) => {
           (streamProvider as any)._rpcRequest(
-            { method: "eth_accounts" },
+            { method: "qrl_accounts" },
             (error: Error | null, res: any) => {
               expect(
                 (streamProvider as any)._rpcEngine.handle,
               ).toHaveBeenCalledWith(
-                expect.objectContaining({ method: "eth_accounts" }),
+                expect.objectContaining({ method: "qrl_accounts" }),
                 expect.any(Function),
               );
 
               expect(
                 (streamProvider as any)._handleAccountsChanged,
-              ).toHaveBeenCalledWith([], true);
+              ).not.toHaveBeenCalled();
 
               expect(error).toStrictEqual(new Error("foo"));
               expect(res).toStrictEqual({ error: "foo" });
@@ -380,7 +378,6 @@ describe("StreamProvider", () => {
             return {
               accounts: [],
               chainId: "0x0",
-              isUnlocked: true,
               networkVersion: "0",
             };
           });
@@ -414,7 +411,6 @@ describe("StreamProvider", () => {
             return {
               accounts: [],
               chainId: "0x0",
-              isUnlocked: true,
               networkVersion: "0",
             };
           });

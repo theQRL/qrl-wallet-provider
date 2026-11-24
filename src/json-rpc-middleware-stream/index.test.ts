@@ -13,6 +13,41 @@ const noop = function (_a: any) {};
 const jsonrpc = "2.0" as const;
 
 describe("createStreamMiddleware", () => {
+  it("ignores invalid envelopes and matches response IDs without coercion", async () => {
+    const { stream, events, middleware } = createStreamMiddleware();
+    const response: { jsonrpc: "2.0"; id: number; result?: null } = { jsonrpc, id: 0 };
+    const req = { jsonrpc, id: 0, method: "qrl_test" };
+    const finished = jest.fn();
+    const notification = jest.fn();
+    events.on("notification", notification);
+    middleware(req, response, jest.fn(), finished);
+
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      stream.write({ jsonrpc, id: "0", result: "wrong request" });
+      stream.write({ jsonrpc, id: 0, result: true, error: { code: -1, message: "error" } });
+      stream.write({ jsonrpc, id: 0, result: true, method: "unexpected" });
+      stream.write({ jsonrpc: "1.0", method: "qrl_subscription" });
+      stream.write({ jsonrpc, method: "", params: [] });
+      await artificialDelay();
+
+      expect(finished).not.toHaveBeenCalled();
+      expect(notification).not.toHaveBeenCalled();
+      expect(response).toEqual({ jsonrpc, id: 0 });
+
+      stream.write({ jsonrpc, id: 0, result: null });
+      stream.write({ jsonrpc, method: "qrl_subscription", params: [] });
+      await artificialDelay();
+
+      expect(finished).toHaveBeenCalledTimes(1);
+      expect(response).toEqual({ jsonrpc, id: 0, result: null });
+      expect(notification).toHaveBeenCalledWith({ jsonrpc, method: "qrl_subscription", params: [] });
+    } finally {
+      warn.mockRestore();
+      stream.destroy();
+    }
+  });
+
   it("processes a request", async () => {
     const jsonRpcConnection = createStreamMiddleware();
     const req = { id: 1, jsonrpc, method: "test" };
@@ -176,6 +211,7 @@ describe("retry logic in middleware connected to a port", () => {
 
     // Reconnected, gets sent again
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -191,6 +227,7 @@ describe("retry logic in middleware connected to a port", () => {
     // Handled messages don't get retried but unhandled still do
 
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -222,6 +259,7 @@ describe("retry logic in middleware connected to a port", () => {
 
     // Reconnected, but request is not re-submitted
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -241,6 +279,7 @@ describe("retry logic in middleware connected to a port", () => {
 
     // Reconnected, gets sent again message count increased to 2
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -248,6 +287,7 @@ describe("retry logic in middleware connected to a port", () => {
 
     // Reconnected, gets sent again message count increased to 3
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -255,6 +295,7 @@ describe("retry logic in middleware connected to a port", () => {
 
     // Reconnected, gets sent again message count increased to 4
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
     await artificialDelay();
@@ -268,6 +309,7 @@ describe("retry logic in middleware connected to a port", () => {
     });
     // Reconnected, error is thrown when trying to resend request more that 3 times
     messageConsumer({
+      jsonrpc,
       method: RECONNECTED,
     });
   });

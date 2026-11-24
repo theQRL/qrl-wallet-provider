@@ -52,7 +52,6 @@ export type RequestArguments = {
 export type BaseProviderState = {
   accounts: null | string[];
   isConnected: boolean;
-  isUnlocked: boolean;
   initialized: boolean;
   isPermanentlyDisconnected: boolean;
 };
@@ -91,19 +90,18 @@ export abstract class BaseProvider extends SafeEventEmitter {
   protected static _defaultState: BaseProviderState = {
     accounts: null,
     isConnected: false,
-    isUnlocked: false,
     initialized: false,
     isPermanentlyDisconnected: false,
   };
 
   /**
-   * The chain ID of the currently connected Ethereum chain.
+   * The chain ID of the currently connected QRL chain.
    * See [chainId.network]{@link https://chainid.network} for more information.
    */
   #chainId: string | null;
 
   /**
-   * The user's currently selected Ethereum address.
+   * The user's currently selected QRL address.
    * If null, QrlWallet is either locked or the user has not permitted any
    * addresses to be viewed.
    */
@@ -143,7 +141,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
     this._handleConnect = this._handleConnect.bind(this);
     this._handleChainChanged = this._handleChainChanged.bind(this);
     this._handleDisconnect = this._handleDisconnect.bind(this);
-    this._handleUnlockStateChanged = this._handleUnlockStateChanged.bind(this);
     this._rpcRequest = this._rpcRequest.bind(this);
     this.request = this.request.bind(this);
 
@@ -250,7 +247,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * @param initialState - The provider's initial state.
    * @param initialState.accounts - The user's accounts.
    * @param initialState.chainId - The chain ID.
-   * @param initialState.isUnlocked - Whether the user has unlocked QrlWallet.
    * @param initialState.networkVersion - The network version.
    * @fires BaseProvider#_initialized - If `initialState` is defined.
    * @fires BaseProvider#connect - If `initialState` is defined.
@@ -258,7 +254,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
   protected _initializeState(initialState?: {
     accounts: string[];
     chainId: string;
-    isUnlocked: boolean;
     networkVersion?: string;
   }) {
     if (this.#state.initialized) {
@@ -266,13 +261,13 @@ export abstract class BaseProvider extends SafeEventEmitter {
     }
 
     if (initialState) {
-      const { accounts, chainId, isUnlocked, networkVersion } = initialState;
+      const { accounts, chainId, networkVersion } = initialState;
 
       // EIP-1193 connect
       this._handleConnect(chainId);
       this._handleChainChanged({ chainId, networkVersion });
-      this._handleUnlockStateChanged({ accounts, isUnlocked });
-      this._handleAccountsChanged(accounts);
+      // An account reply or notification can arrive before the initial snapshot.
+      this._handleAccountsChanged(this.#state.accounts ?? accounts);
     }
 
     // Mark provider as initialized regardless of whether initial state was
@@ -301,18 +296,17 @@ export abstract class BaseProvider extends SafeEventEmitter {
       }
 
       if (
-        payload.method === "eth_accounts" ||
-        payload.method === "eth_requestAccounts"
+        payload.method === "qrl_accounts" ||
+        payload.method === "qrl_requestAccounts"
       ) {
         // handle accounts changing
         callbackWrapper = (
           error: Error,
           response: JsonRpcSuccess<string[]>,
         ) => {
-          this._handleAccountsChanged(
-            response.result ?? [],
-            payload.method === "eth_accounts",
-          );
+          if (!error && Array.isArray(response?.result)) {
+            this._handleAccountsChanged(response.result);
+          }
           callback(error, response);
         };
       }
@@ -370,7 +364,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
         this.#chainId = null;
         this.#state.accounts = null;
         this.#selectedAddress = null;
-        this.#state.isUnlocked = false;
         this.#state.isPermanentlyDisconnected = true;
       }
 
@@ -416,13 +409,8 @@ export abstract class BaseProvider extends SafeEventEmitter {
    * accountsChanged event.
    *
    * @param accounts - The new accounts value.
-   * @param isEthAccounts - Whether the accounts value was returned by
-   * a call to eth_accounts.
    */
-  protected _handleAccountsChanged(
-    accounts: unknown[],
-    isEthAccounts = false,
-  ): void {
+  protected _handleAccountsChanged(accounts: unknown[]): void {
     let _accounts = accounts;
 
     if (!Array.isArray(accounts)) {
@@ -433,7 +421,7 @@ export abstract class BaseProvider extends SafeEventEmitter {
       _accounts = [];
     }
 
-    for (const account of accounts) {
+    for (const account of _accounts) {
       if (typeof account !== "string") {
         this._log.error(
           "QrlWallet: Received non-string account. Please report this bug.",
@@ -446,15 +434,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
 
     // emit accountsChanged if anything about the accounts array has changed
     if (!dequal(this.#state.accounts, _accounts)) {
-      // we should always have the correct accounts even before eth_accounts
-      // returns
-      if (isEthAccounts && this.#state.accounts !== null) {
-        this._log.error(
-          `QrlWallet: 'eth_accounts' unexpectedly updated accounts. Please report this bug.`,
-          _accounts,
-        );
-      }
-
       this.#state.accounts = _accounts as string[];
 
       // handle selectedAddress
@@ -467,35 +446,6 @@ export abstract class BaseProvider extends SafeEventEmitter {
         const _nextAccounts = [..._accounts];
         this.emit("accountsChanged", _nextAccounts);
       }
-    }
-  }
-
-  /**
-   * Upon receipt of a new isUnlocked state, sets relevant public state.
-   * Calls the accounts changed handler with the received accounts, or an empty
-   * array.
-   *
-   * Does nothing if the received value is equal to the existing value.
-   * There are no lock/unlock events.
-   *
-   * @param opts - Options bag.
-   * @param opts.accounts - The exposed accounts, if any.
-   * @param opts.isUnlocked - The latest isUnlocked value.
-   */
-  protected _handleUnlockStateChanged({
-    accounts,
-    isUnlocked,
-  }: { accounts?: string[]; isUnlocked?: boolean } = {}) {
-    if (typeof isUnlocked !== "boolean") {
-      this._log.error(
-        "QrlWallet: Received invalid isUnlocked parameter. Please report this bug.",
-      );
-      return;
-    }
-
-    if (isUnlocked !== this.#state.isUnlocked) {
-      this.#state.isUnlocked = isUnlocked;
-      this._handleAccountsChanged(accounts ?? []);
     }
   }
 }

@@ -6,7 +6,7 @@ import messages from "../messages";
 import type { ConsoleLike } from "../utils";
 
 /**
- * Create JSON-RPC middleware that logs warnings for deprecated RPC methods.
+ * Create JSON-RPC middleware that logs a warning for experimental NFT asset tracking.
  *
  * @param log - The logging API to use.
  * @returns The JSON-RPC middleware.
@@ -14,31 +14,18 @@ import type { ConsoleLike } from "../utils";
 export function createRpcWarningMiddleware(
   log: ConsoleLike,
 ): JsonRpcMiddleware<JsonRpcParams, Json> {
-  const sentWarnings = {
-    ethDecryptDeprecation: false,
-    ethGetEncryptionPublicKeyDeprecation: false,
-    walletWatchAssetNFTExperimental: false,
-  };
+  let warnedAboutNftTracking = false;
 
   return (req, _res, next) => {
-    if (!sentWarnings.ethDecryptDeprecation && req.method === "eth_decrypt") {
-      log.warn(messages.warnings.rpc.ethDecryptDeprecation);
-      sentWarnings.ethDecryptDeprecation = true;
-    } else if (
-      !sentWarnings.ethGetEncryptionPublicKeyDeprecation &&
-      req.method === "eth_getEncryptionPublicKey"
-    ) {
-      log.warn(messages.warnings.rpc.ethGetEncryptionPublicKeyDeprecation);
-      sentWarnings.ethGetEncryptionPublicKeyDeprecation = true;
-    } else if (
-      !sentWarnings.walletWatchAssetNFTExperimental &&
+    if (
+      !warnedAboutNftTracking &&
       req.method === "wallet_watchAsset" &&
       [ERC721, ERC1155].includes(
         (req as JsonRpcRequest<{ type: string }>).params?.type || "",
       )
     ) {
       log.warn(messages.warnings.rpc.walletWatchAssetNFTExperimental);
-      sentWarnings.walletWatchAssetNFTExperimental = true;
+      warnedAboutNftTracking = true;
     }
     next();
   };

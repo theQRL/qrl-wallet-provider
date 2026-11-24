@@ -15,7 +15,7 @@ export type ConsoleLike = Pick<
 // Constants
 
 export const EMITTED_NOTIFICATIONS = Object.freeze([
-  "eth_subscription", // per eth-json-rpc-filters/subscriptionManager
+  "qrl_subscription",
 ]);
 
 // Utility functions

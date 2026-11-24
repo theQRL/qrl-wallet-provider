@@ -19,16 +19,6 @@ type Scenario = {
 
 const affected: Scenario[] = [
   {
-    scenario: "eth_decrypt",
-    method: "eth_decrypt",
-    warning: messages.warnings.rpc.ethDecryptDeprecation,
-  },
-  {
-    scenario: "eth_getEncryptionPublicKey",
-    method: "eth_getEncryptionPublicKey",
-    warning: messages.warnings.rpc.ethGetEncryptionPublicKeyDeprecation,
-  },
-  {
     scenario: 'wallet_watchAsset with `type: "ERC721"`',
     method: "wallet_watchAsset",
     params: {
@@ -50,8 +40,8 @@ const affected: Scenario[] = [
 
 const unaffected: Scenario[] = [
   {
-    scenario: "eth_chainId",
-    method: "eth_chainId",
+    scenario: "qrl_chainId",
+    method: "qrl_chainId",
   },
   {
     scenario: 'wallet_watchAsset with `type: "ERC20"`',

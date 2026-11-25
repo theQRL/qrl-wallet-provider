@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      recover-npm-v2:
+        description: Publish the existing v2.0.0 tag to npm
+        type: boolean
+        required: true
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -127,6 +134,49 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
+
+  recover-npm-v2:
+    name: Recover npm v2.0.0
+    needs: [ci, coverage, workflow-lint]
+    if: github.event_name == 'workflow_dispatch' && inputs.recover-npm-v2 && github.ref == 'refs/heads/main' && github.repository == 'theQRL/qrl-wallet-provider'
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read # Check out the original release tag.
+      id-token: write # Authenticate to npm with trusted publishing and attest provenance.
+    steps:
+      - name: Checkout v2.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Pin the exact source of the partial release, even if the tag moves.
+          ref: f6229c36e33dc4d5c8e8a6fb88594d1bd26ef0fb
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install npm with trusted publishing support
+        run: npm install --global npm@11.21.3
+
+      - name: Validate the release source
+        run: |
+          test "$(node -p 'require("./package.json").name')" = '@theqrl/qrl-wallet-provider'
+          test "$(node -p 'require("./package.json").version')" = '2.0.0'
+          npm ci
+          npm test -- --runInBand
+
+      - name: Publish v2.0.0 to npm
+        run: |
+          # Guard against replacing latest if the registry has advanced since the failed release.
+          latest=$(npm view @theqrl/qrl-wallet-provider dist-tags.latest)
+          if [ "$latest" != '1.0.1' ]; then
+            echo "::error::Expected npm latest to be 1.0.1 before recovering 2.0.0. Found $latest."
+            exit 1
+          fi
+          npm publish --provenance --access public
 
   # ===========================================================================
   # Supply Chain: SBOM, Checksums, GitHub Attestations

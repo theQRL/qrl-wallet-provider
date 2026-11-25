@@ -75,6 +75,9 @@ export abstract class BaseProvider extends SafeEventEmitter {
   // through the protected getters below.
   #state: BaseProviderState;
 
+  #accountsNotificationVersion = 0;
+  #accountResponseVersions = new WeakMap<object, number>();
+
   protected _rpcEngine: JsonRpcEngine;
 
   /** Read-only view of `#state.isConnected` for subclasses. */
@@ -304,7 +307,12 @@ export abstract class BaseProvider extends SafeEventEmitter {
           error: Error,
           response: JsonRpcSuccess<string[]>,
         ) => {
-          if (!error && Array.isArray(response?.result)) {
+          if (
+            !error &&
+            Array.isArray(response?.result) &&
+            (this.#accountResponseVersions.get(response) ??
+              this.#accountsNotificationVersion) === this.#accountsNotificationVersion
+          ) {
             this._handleAccountsChanged(response.result);
           }
           callback(error, response);
@@ -401,6 +409,19 @@ export abstract class BaseProvider extends SafeEventEmitter {
         this.emit("chainChanged", this.#chainId);
       }
     }
+  }
+
+  /** Record the notification version before an RPC response is deferred. */
+  protected _recordAccountResponse(method: string, response: object): void {
+    if (method === "qrl_accounts" || method === "qrl_requestAccounts") {
+      this.#accountResponseVersions.set(response, this.#accountsNotificationVersion);
+    }
+  }
+
+  protected _handleAccountsNotification(accounts: unknown[]): void {
+    // Even a notification with the current accounts supersedes earlier replies.
+    this.#accountsNotificationVersion += 1;
+    this._handleAccountsChanged(accounts);
   }
 
   /**

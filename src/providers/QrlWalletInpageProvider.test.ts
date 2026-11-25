@@ -420,6 +420,47 @@ describe("QrlWalletInpageProvider: RPC", () => {
     expect(provider.selectedAddress).toBe(account);
   });
 
+  it.each([
+    ["qrl_accounts", true],
+    ["qrl_requestAccounts", true],
+    ["qrl_accounts", false],
+    ["qrl_requestAccounts", false],
+  ] as const)("preserves receive order for %s (reply first: %s)", async (method, replyFirst) => {
+    const initialAccount = `Q${"12".repeat(64)}`;
+    const responseAccount = `Q${"ab".repeat(64)}`;
+    const notifiedAccount = `Q${"34".repeat(64)}`;
+    const { provider, connectionStream } = await getInitializedProvider({
+      initialState: { accounts: [initialAccount] },
+      onMethodCalled: [{
+        substream: QrlWalletInpageProviderStreamName,
+        method,
+        callback: ({ id }) => {
+          const reply = () => connectionStream.reply(QrlWalletInpageProviderStreamName, {
+            jsonrpc: "2.0", id, result: [responseAccount],
+          });
+          const notify = () => connectionStream.notify(QrlWalletInpageProviderStreamName, {
+            jsonrpc: "2.0", method: "qrlWallet_accountsChanged", params: [notifiedAccount],
+          });
+          if (replyFirst) {
+            reply();
+            notify();
+          } else {
+            notify();
+            reply();
+          }
+        },
+      }],
+    });
+    const accountsChanged = jest.fn();
+    provider.on("accountsChanged", accountsChanged);
+
+    await expect(provider.request({ method })).resolves.toEqual([responseAccount]);
+    expect(provider.selectedAddress).toBe(replyFirst ? notifiedAccount : responseAccount);
+    expect(accountsChanged.mock.calls).toEqual(
+      replyFirst ? [[[notifiedAccount]]] : [[[notifiedAccount]], [[responseAccount]]],
+    );
+  });
+
   it("tracks full-length QRL accounts across requests and notifications", async () => {
     const initialAccount = `Q${"12".repeat(64)}`;
     const grantedAccount = `Q${"ab".repeat(64)}`;

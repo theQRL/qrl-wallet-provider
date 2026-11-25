@@ -79,6 +79,8 @@ export abstract class AbstractStreamProvider extends BaseProvider {
     // Set up RPC connection
     this._jsonRpcConnection = createStreamMiddleware({
       retryOnMessage: "QRL_WALLET_EXTENSION_CONNECT_CAN_RETRY",
+      onResponseReceived: (request, response) =>
+        this._recordAccountResponse(request.method, response),
     }) as unknown as JsonRpcConnection;
 
     // @ts-ignore
@@ -101,7 +103,7 @@ export abstract class AbstractStreamProvider extends BaseProvider {
     this._jsonRpcConnection.events.on("notification", (payload) => {
       const { method, params } = payload;
       if (method === "qrlWallet_accountsChanged") {
-        this._handleAccountsChanged(params);
+        this._handleAccountsNotification(params);
       } else if (method === "qrlWallet_chainChanged") {
         this._handleChainChanged(params);
       } else if (EMITTED_NOTIFICATIONS.includes(method)) {

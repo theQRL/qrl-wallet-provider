@@ -25,6 +25,10 @@ type IdMapValue = {
 
 type Options = {
   retryOnMessage?: string;
+  onResponseReceived?: (
+    request: JsonRpcRequest,
+    response: PendingJsonRpcResponse<Json>,
+  ) => void;
 };
 
 function validateMessage(
@@ -142,6 +146,7 @@ export default function createStreamMiddleware(options: Options = {}) {
     } else {
       context.res.result = res.result;
     }
+    options.onResponseReceived?.(context.req, context.res);
     // run callback on empty stack,
     // prevent internal stream-handler from catching errors
     setTimeout(context.end);

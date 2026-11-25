@@ -15,7 +15,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("can be called and not throw", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });
@@ -23,7 +22,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("calls connect", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });
@@ -32,7 +30,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("returns a stream provider", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });
@@ -41,7 +38,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("supports Flask", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });
@@ -53,7 +49,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("supports Beta", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });
@@ -65,7 +60,6 @@ describe("createExternalExtensionProvider", () => {
   });
 
   it("supports custom extension ID", () => {
-    // `global.chrome.runtime` mock setup by `jest-chrome` in `jest.setup.browser.js`
     (global.chrome.runtime.connect as any).mockImplementation(() => {
       return new MockPort();
     });

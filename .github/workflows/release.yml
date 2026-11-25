@@ -167,6 +167,7 @@ jobs:
           test "$(node -p 'require("./package.json").version')" = '2.0.0'
           npm ci
           npm test -- --runInBand
+          npm run build
 
       - name: Publish v2.0.0 to npm
         run: |

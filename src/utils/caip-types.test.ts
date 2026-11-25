@@ -152,7 +152,7 @@ describe('isCaipAccountAddress', () => {
 describe('parseCaipChainId', () => {
   it('parses valid chain ids', () => {
     expect(parseCaipChainId('eip155:1')).toMatchInlineSnapshot(`
-Object {
+{
   "namespace": "eip155",
   "reference": "1",
 }
@@ -160,14 +160,14 @@ Object {
 
     expect(parseCaipChainId('bip122:000000000019d6689c085ae165831e93')).
 toMatchInlineSnapshot(`
-Object {
+{
   "namespace": "bip122",
   "reference": "000000000019d6689c085ae165831e93",
 }
 `);
 
     expect(parseCaipChainId('cosmos:cosmoshub-3')).toMatchInlineSnapshot(`
-Object {
+{
   "namespace": "cosmos",
   "reference": "cosmoshub-3",
 }
@@ -175,7 +175,7 @@ Object {
 
     expect(parseCaipChainId('polkadot:b0a8d493285c2df73290dfb7e61f870f')).
 toMatchInlineSnapshot(`
-Object {
+{
   "namespace": "polkadot",
   "reference": "b0a8d493285c2df73290dfb7e61f870f",
 }
@@ -204,9 +204,9 @@ describe('parseCaipAccountId', () => {
     expect(
   parseCaipAccountId('eip155:1:0xab16a96d359ec26a11e2c2b3d8f8b8942d5bfcdb')
 ).toMatchInlineSnapshot(`
-Object {
+{
   "address": "0xab16a96d359ec26a11e2c2b3d8f8b8942d5bfcdb",
-  "chain": Object {
+  "chain": {
     "namespace": "eip155",
     "reference": "1",
   },
@@ -219,9 +219,9 @@ Object {
     'bip122:000000000019d6689c085ae165831e93:128Lkh3S7CkDTBZ8W7BbpsN3YYizJMp8p6'
   )
 ).toMatchInlineSnapshot(`
-Object {
+{
   "address": "128Lkh3S7CkDTBZ8W7BbpsN3YYizJMp8p6",
-  "chain": Object {
+  "chain": {
     "namespace": "bip122",
     "reference": "000000000019d6689c085ae165831e93",
   },
@@ -234,9 +234,9 @@ Object {
     'cosmos:cosmoshub-3:cosmos1t2uflqwqe0fsj0shcfkrvpukewcw40yjj6hdc0'
   )
 ).toMatchInlineSnapshot(`
-Object {
+{
   "address": "cosmos1t2uflqwqe0fsj0shcfkrvpukewcw40yjj6hdc0",
-  "chain": Object {
+  "chain": {
     "namespace": "cosmos",
     "reference": "cosmoshub-3",
   },
@@ -249,9 +249,9 @@ Object {
     'polkadot:b0a8d493285c2df73290dfb7e61f870f:5hmuyxw9xdgbpptgypokw4thfyoe3ryenebr381z9iaegmfy'
   )
 ).toMatchInlineSnapshot(`
-Object {
+{
   "address": "5hmuyxw9xdgbpptgypokw4thfyoe3ryenebr381z9iaegmfy",
-  "chain": Object {
+  "chain": {
     "namespace": "polkadot",
     "reference": "b0a8d493285c2df73290dfb7e61f870f",
   },

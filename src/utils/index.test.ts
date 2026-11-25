@@ -3,7 +3,7 @@ import * as allExports from '.';
 describe('index', () => {
   it('includes only cross-platform exports', () => {
     expect(Object.keys(allExports).sort()).toMatchInlineSnapshot(`
-Array [
+[
   "AssertionError",
   "CAIP_ACCOUNT_ADDRESS_REGEX",
   "CAIP_ACCOUNT_ID_REGEX",

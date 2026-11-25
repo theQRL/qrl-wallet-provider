@@ -1,3 +1,4 @@
+export * from "./address";
 export * from "./assert";
 export * from "./base64";
 export * from "./bytes";

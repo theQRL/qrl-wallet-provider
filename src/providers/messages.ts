@@ -7,7 +7,7 @@ const messages = {
     sendSiteMetadata: () =>
       `QrlWallet: Failed to send site metadata. This is an internal error, please report this bug.`,
     unsupportedSync: (method: string) =>
-      `QrlWallet: The QrlWallet Ethereum provider does not support synchronous methods like ${method} without a callback parameter.`,
+      `QrlWallet: The QRL wallet provider does not support synchronous methods like ${method} without a callback parameter.`,
     invalidDuplexStream: () => "Must provide a Node.js-style duplex stream.",
     invalidNetworkParams: () =>
       "QrlWallet: Received invalid network parameters. Please report this bug.",
@@ -25,8 +25,7 @@ const messages = {
   },
   warnings: {
     // deprecated methods
-    enableDeprecation: `QrlWallet: 'ethereum.enable()' is deprecated and may be removed in the future. Please use the 'eth_requestAccounts' RPC method instead.\nFor more information, see: https://eips.ethereum.org/EIPS/eip-1102`,
-    sendDeprecation: `QrlWallet: 'ethereum.send(...)' is deprecated and may be removed in the future. Please use 'ethereum.sendAsync(...)' or 'ethereum.request(...)' instead.\nFor more information, see: https://eips.ethereum.org/EIPS/eip-1193`,
+    sendDeprecation: `QrlWallet: 'provider.send(...)' is deprecated and may be removed in the future. Please use 'provider.sendAsync(...)' or 'provider.request(...)' instead.\nFor more information, see: https://eips.ethereum.org/EIPS/eip-1193`,
     // deprecated events
     events: {
       close: `QrlWallet: The event 'close' is deprecated and may be removed in the future. Please use 'disconnect' instead.\nFor more information, see: https://eips.ethereum.org/EIPS/eip-1193#disconnect`,
@@ -35,12 +34,10 @@ const messages = {
       notification: `QrlWallet: The event 'notification' is deprecated and may be removed in the future. Use 'message' instead.\nFor more information, see: https://eips.ethereum.org/EIPS/eip-1193#message`,
     },
     rpc: {
-      ethDecryptDeprecation: `QrlWallet: The RPC method 'eth_decrypt' is deprecated and may be removed in the future.\nFor more information, see: https://medium.com/metamask/metamask-api-method-deprecation-2b0564a84686`,
-      ethGetEncryptionPublicKeyDeprecation: `QrlWallet: The RPC method 'eth_getEncryptionPublicKey' is deprecated and may be removed in the future.\nFor more information, see: https://medium.com/metamask/metamask-api-method-deprecation-2b0564a84686`,
       walletWatchAssetNFTExperimental: `QrlWallet: The RPC method 'wallet_watchAsset' is experimental for ERC721/ERC1155 assets and may change in the future.`,
     },
     // misc
-    experimentalMethods: `QrlWallet: 'ethereum._qrlWallet' exposes non-standard, experimental methods. They may be removed or changed without warning.`,
+    experimentalMethods: `QrlWallet: 'provider._qrlWallet' exposes non-standard, experimental methods. They may be removed or changed without warning.`,
   },
 };
 export default messages;

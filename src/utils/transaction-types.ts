@@ -1,3 +1,4 @@
+import type { QrlAddress } from './address';
 import type { Bytes } from './bytes';
 import type { Hex } from './hex';
 
@@ -30,7 +31,7 @@ export type Signature = {
 };
 
 /**
- * Base Ethereum Transaction
+ * Base QRL transaction
  */
 export type BaseTransaction = {
   /**
@@ -42,17 +43,17 @@ export type BaseTransaction = {
   /**
    * The address of the sender, that will be signing the transaction
    */
-  from: Hex | Uint8Array;
+  from: QrlAddress | Uint8Array;
 
   /**
    * The receiving address.
    * If an externally-owned account, the transaction will transfer value.
    * If a contract account, the transaction will execute the contract code.
    */
-  to: Hex | Uint8Array;
+  to: QrlAddress | Uint8Array;
 
   /**
-   * The amount of Ether sent.
+   * The amount sent in Planck.
    */
   value: Bytes;
 
@@ -68,7 +69,7 @@ export type BaseTransaction = {
 };
 
 /**
- * Typed Ethereum Transaction
+ * Typed QRL transaction
  */
 export type TypedTransaction = BaseTransaction & {
   /**
@@ -107,7 +108,7 @@ export type EIP2930Transaction = TypedTransaction & {
    * List of addresses and storage keys that the transaction plans to access
    */
   accessList:
-    | { address: Hex; storageKeys: Hex[] }[]
+    | { address: QrlAddress; storageKeys: Hex[] }[]
     | { address: Uint8Array; storageKeys: Uint8Array[] }[];
 };
 

@@ -47,7 +47,6 @@ async function getInitializedProvider({
   initialState: {
     accounts = [],
     chainId = "0x0",
-    isUnlocked = true,
     networkVersion = "0",
   } = {},
   onMethodCalled = [],
@@ -77,7 +76,6 @@ async function getInitializedProvider({
           result: {
             accounts,
             chainId,
-            isUnlocked,
             networkVersion,
           },
         })
@@ -355,21 +353,18 @@ describe("QrlWalletInpageProvider: RPC", () => {
       });
     });
 
-    it("calls _handleAccountsChanged on request for eth_accounts", async () => {
+    it("calls _handleAccountsChanged on request for qrl_accounts", async () => {
       setNextRpcEngineResponse(null, { result: ["0x1"] });
       await new Promise((done) => {
         provider._rpcRequest(
-          { method: "eth_accounts" },
+          { method: "qrl_accounts" },
           (error: any, response: any) => {
             expect(provider._rpcEngine.handle).toHaveBeenCalledWith(
-              expect.objectContaining({ method: "eth_accounts" }),
+              expect.objectContaining({ method: "qrl_accounts" }),
               expect.any(Function)
             );
 
-            expect(provider._handleAccountsChanged).toHaveBeenCalledWith(
-              ["0x1"],
-              true
-            );
+            expect(provider._handleAccountsChanged).toHaveBeenCalledWith(["0x1"]);
 
             expect(error).toBeNull();
             expect(response).toStrictEqual({ result: ["0x1"] });
@@ -379,21 +374,18 @@ describe("QrlWalletInpageProvider: RPC", () => {
       });
     });
 
-    it("calls _handleAccountsChanged with empty array on eth_accounts request returning error", async () => {
+    it("leaves account state alone when qrl_accounts fails", async () => {
       setNextRpcEngineResponse(new Error("foo"), { error: "foo" });
       await new Promise((done) => {
         provider._rpcRequest(
-          { method: "eth_accounts" },
+          { method: "qrl_accounts" },
           (error: any, response: any) => {
             expect(provider._rpcEngine.handle).toHaveBeenCalledWith(
-              expect.objectContaining({ method: "eth_accounts" }),
+              expect.objectContaining({ method: "qrl_accounts" }),
               expect.any(Function)
             );
 
-            expect(provider._handleAccountsChanged).toHaveBeenCalledWith(
-              [],
-              true
-            );
+            expect(provider._handleAccountsChanged).not.toHaveBeenCalled();
 
             expect(error).toStrictEqual(new Error("foo"));
             expect(response).toStrictEqual({ error: "foo" });
@@ -404,7 +396,151 @@ describe("QrlWalletInpageProvider: RPC", () => {
     });
   });
 
+  it("keeps an account reply that arrives before the initial state", async () => {
+    const account = `Q${"ab".repeat(64)}`;
+    let initialRequestId: JsonRpcRequest["id"];
+    const stream = new MockConnectionStream((name, { id, method }) => {
+      if (method === "qrlWallet_getProviderState") {
+        initialRequestId = id;
+      } else if (method === "qrl_accounts") {
+        stream.reply(name, { jsonrpc: "2.0", id, result: [account] });
+      }
+    });
+    const provider = new QrlWalletInpageProvider(stream);
+    const initialized = new Promise((resolve) => provider.once("_initialized", resolve));
+
+    await expect(provider.request({ method: "qrl_accounts" })).resolves.toEqual([account]);
+    stream.reply(QrlWalletInpageProviderStreamName, {
+      jsonrpc: "2.0",
+      id: initialRequestId!,
+      result: { accounts: [], chainId: "0x1234", networkVersion: "4660" },
+    });
+    await initialized;
+
+    expect(provider.selectedAddress).toBe(account);
+  });
+
+  it.each([
+    ["qrl_accounts", true],
+    ["qrl_requestAccounts", true],
+    ["qrl_accounts", false],
+    ["qrl_requestAccounts", false],
+  ] as const)("preserves receive order for %s (reply first: %s)", async (method, replyFirst) => {
+    const initialAccount = `Q${"12".repeat(64)}`;
+    const responseAccount = `Q${"ab".repeat(64)}`;
+    const notifiedAccount = `Q${"34".repeat(64)}`;
+    const { provider, connectionStream } = await getInitializedProvider({
+      initialState: { accounts: [initialAccount] },
+      onMethodCalled: [{
+        substream: QrlWalletInpageProviderStreamName,
+        method,
+        callback: ({ id }) => {
+          const reply = () => connectionStream.reply(QrlWalletInpageProviderStreamName, {
+            jsonrpc: "2.0", id, result: [responseAccount],
+          });
+          const notify = () => connectionStream.notify(QrlWalletInpageProviderStreamName, {
+            jsonrpc: "2.0", method: "qrlWallet_accountsChanged", params: [notifiedAccount],
+          });
+          if (replyFirst) {
+            reply();
+            notify();
+          } else {
+            notify();
+            reply();
+          }
+        },
+      }],
+    });
+    const accountsChanged = jest.fn();
+    provider.on("accountsChanged", accountsChanged);
+
+    await expect(provider.request({ method })).resolves.toEqual([responseAccount]);
+    expect(provider.selectedAddress).toBe(replyFirst ? notifiedAccount : responseAccount);
+    expect(accountsChanged.mock.calls).toEqual(
+      replyFirst ? [[[notifiedAccount]]] : [[[notifiedAccount]], [[responseAccount]]],
+    );
+  });
+
+  it("tracks full-length QRL accounts across requests and notifications", async () => {
+    const initialAccount = `Q${"12".repeat(64)}`;
+    const grantedAccount = `Q${"ab".repeat(64)}`;
+    let rejectRequest = false;
+    const { provider, connectionStream } = await getInitializedProvider({
+      initialState: { accounts: [initialAccount] },
+      onMethodCalled: [
+        {
+          substream: QrlWalletInpageProviderStreamName,
+          method: "qrl_requestAccounts",
+          callback: ({ id }) => {
+            connectionStream.reply(QrlWalletInpageProviderStreamName, {
+              jsonrpc: "2.0",
+              id,
+              ...(rejectRequest
+                ? { error: { code: 4001, message: "User rejected the request." } }
+                : { result: [grantedAccount] }),
+            });
+          },
+        },
+        {
+          substream: QrlWalletInpageProviderStreamName,
+          method: "qrl_accounts",
+          callback: ({ id }) => {
+            connectionStream.reply(QrlWalletInpageProviderStreamName, {
+              jsonrpc: "2.0",
+              id,
+              result: [],
+            });
+          },
+        },
+      ],
+    });
+
+    const accountsChanged = jest.fn();
+    provider.on("accountsChanged", accountsChanged);
+    expect(provider.selectedAddress).toBe(initialAccount);
+
+    await expect(provider.request({ method: "qrl_requestAccounts" })).resolves.toEqual([grantedAccount]);
+    expect(provider.selectedAddress).toBe(grantedAccount);
+    expect(accountsChanged).toHaveBeenCalledWith([grantedAccount]);
+
+    connectionStream.notify(QrlWalletInpageProviderStreamName, {
+      jsonrpc: "2.0",
+      method: "qrlWallet_accountsChanged",
+      params: [grantedAccount],
+    });
+    connectionStream.notify(QrlWalletInpageProviderStreamName, {
+      jsonrpc: "2.0",
+      method: "qrlWallet_unlockStateChanged",
+      params: { isUnlocked: false, accounts: [] },
+    });
+    rejectRequest = true;
+    await expect(provider.request({ method: "qrl_requestAccounts" })).rejects.toMatchObject({ code: 4001 });
+    expect(provider.selectedAddress).toBe(grantedAccount);
+    expect(accountsChanged).toHaveBeenCalledTimes(1);
+
+    await expect(provider.request({ method: "qrl_accounts" })).resolves.toEqual([]);
+    expect(provider.selectedAddress).toBeNull();
+    expect(accountsChanged.mock.calls).toEqual([[[grantedAccount]], [[]]]);
+  });
+
   describe("provider events", () => {
+    it("emits QRL subscription notifications as provider messages", async () => {
+      const { provider, connectionStream } = await getInitializedProvider();
+      const params = { subscription: "0x1", result: { number: "0x2" } };
+      const received = new Promise((resolve) => provider.once("message", resolve));
+
+      connectionStream.notify(QrlWalletInpageProviderStreamName, {
+        jsonrpc: "2.0",
+        method: "qrl_subscription",
+        params,
+      });
+
+      await expect(received).resolves.toEqual({
+        type: "qrl_subscription",
+        data: params,
+      });
+    });
+
     it("calls chainChanged when receiving a new chainId", async () => {
       const { provider, connectionStream } = await getInitializedProvider();
 
@@ -498,130 +634,6 @@ describe("QrlWalletInpageProvider: RPC", () => {
     });
   });
 
-  describe("warnings", () => {
-    describe("rpc methods", () => {
-      const warnings = [
-        {
-          method: "eth_decrypt",
-          warning: messages.warnings.rpc.ethDecryptDeprecation,
-        },
-        {
-          method: "eth_getEncryptionPublicKey",
-          warning: messages.warnings.rpc.ethGetEncryptionPublicKeyDeprecation,
-        },
-      ];
-
-      for (const { method, warning } of warnings) {
-        describe(`${method}`, () => {
-          it("should warn the first time the method is called", async () => {
-            const consoleWarnSpy = jest.spyOn(globalThis.console, "warn");
-            const { provider, connectionStream } = await getInitializedProvider(
-              {
-                onMethodCalled: [
-                  {
-                    substream: "qrl-wallet-provider",
-                    method,
-                    callback: ({ id }) => {
-                      connectionStream.reply("qrl-wallet-provider", {
-                        id,
-                        jsonrpc: "2.0",
-                        result: null,
-                      });
-                    },
-                  },
-                ],
-              }
-            );
-
-            await provider.request({ method });
-
-            expect(consoleWarnSpy).toHaveBeenCalledWith(warning);
-            expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
-          });
-
-          it("should not warn the second time the method is called", async () => {
-            const { provider, connectionStream } = await getInitializedProvider(
-              {
-                onMethodCalled: [
-                  {
-                    substream: "qrl-wallet-provider",
-                    method,
-                    callback: ({ id }) => {
-                      connectionStream.reply("qrl-wallet-provider", {
-                        id,
-                        jsonrpc: "2.0",
-                        result: null,
-                      });
-                    },
-                  },
-                ],
-              }
-            );
-            const consoleWarnSpy = jest.spyOn(globalThis.console, "warn");
-
-            await provider.request({ method });
-            await provider.request({ method });
-
-            expect(consoleWarnSpy).toHaveBeenCalledWith(warning);
-            expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
-          });
-
-          it("should allow the method to succeed", async () => {
-            const { provider, connectionStream } = await getInitializedProvider(
-              {
-                onMethodCalled: [
-                  {
-                    substream: "qrl-wallet-provider",
-                    method,
-                    callback: ({ id }) => {
-                      connectionStream.reply("qrl-wallet-provider", {
-                        id,
-                        jsonrpc: "2.0",
-                        result: "success!",
-                      });
-                    },
-                  },
-                ],
-              }
-            );
-
-            const response = await provider.request({ method });
-            expect(response).toBe("success!");
-          });
-
-          it("should allow the method to fail", async () => {
-            const { provider, connectionStream } = await getInitializedProvider(
-              {
-                onMethodCalled: [
-                  {
-                    substream: "qrl-wallet-provider",
-                    method,
-                    callback: ({ id }) => {
-                      connectionStream.reply("qrl-wallet-provider", {
-                        id,
-                        jsonrpc: "2.0",
-                        error: { code: 0, message: "failure!" },
-                      });
-                    },
-                  },
-                ],
-              }
-            );
-
-            await expect(async () =>
-              provider.request({ method })
-            ).rejects.toMatchObject({
-              code: 0,
-              message: "failure!",
-            });
-          });
-        });
-      }
-    });
-  });
-});
-
-describe("QrlWalletInpageProvider: Miscellanea", () => {
   describe("constructor", () => {
     it("succeeds if stream is provided", () => {
       expect(
@@ -696,7 +708,6 @@ describe("QrlWalletInpageProvider: Miscellanea", () => {
           return {
             accounts: ["0xabc"],
             chainId: "0x0",
-            isUnlocked: true,
             networkVersion: "0",
           };
         });

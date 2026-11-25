@@ -30,8 +30,8 @@ jobs:
   workflow-lint:
     name: Lint GitHub Actions
     permissions:
-      contents: read
-      security-events: write
+      contents: read # Allow the called workflow to check out the repository.
+      security-events: write # Allow the zizmor job to upload SARIF to GitHub code scanning.
     uses: ./.github/workflows/actionlint.yml
 
   # ===========================================================================
